@@ -14,6 +14,7 @@ final class Repository: Sendable {
     }
     
     static let shared = Repository()
+    static let appDataUpdatedNotification = Notification.Name("appDataUpdatedNotification")
     
     static var suiteUserDefaults = UserDefaults(suiteName: "group.com.rileytestut.AltStore.TB65GXLC46")!
     
@@ -22,16 +23,11 @@ final class Repository: Sendable {
         do {
             let appDataModelEncoded = try encoder.encode(appDataModel)
             Self.suiteUserDefaults.set(appDataModelEncoded, forKey: "AppData")
-            logger.debug("Stored app data model")
+            
+            // Post notification when app data is updated
+            NotificationCenter.default.post(name: Repository.appDataUpdatedNotification, object: nil)
         } catch {
-            logger.error("Failed to encode app data model \(error.localizedDescription)")
+            //
         }
-    }
-}
-
-extension Repository {
-    var logger: Logger {
-        let subsystem = Bundle.main.bundleIdentifier!
-        return Logger(subsystem: subsystem, category: "Repository")
     }
 }

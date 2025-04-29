@@ -8,14 +8,14 @@ class ShieldManager: ObservableObject {
     @Published var selection = FamilyActivitySelection()
     private let store = ManagedSettingsStore()
     private let center = AuthorizationCenter.shared
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "ShieldManager")
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.app.Colne", category: "ShieldManager")
     
     // Create a shared instance for access across the app
     static let shared = ShieldManager()
     
     init() {
         // Load any previously saved selection
-        loadSavedSelection()
+        loadSavedSelectionIfNeeded()
         
         // Request authorization when initialized
         Task {
@@ -27,34 +27,37 @@ class ShieldManager: ObservableObject {
         }
         
         // Set up notification observers for app data changes
-        setupNotificationObservers()
-    }
-    
-    private func setupNotificationObservers() {
-        // Listen for app data changes from other parts of the app or extensions
         NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(appDataDidChange),
-            name: UserDefaults.didChangeNotification,
-            object: Repository.suiteUserDefaults
-        )
-    }
-    
-    @objc private func appDataDidChange() {
-        DispatchQueue.main.async {
-            self.updateShieldState()
+            forName: Repository.appDataUpdatedNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateShieldState()
         }
     }
     
+    func selectionDidChange() {
+        // Save the selection
+        saveSelection()
+        
+    }
+    
     func shield() {
-        logger.debug("Shielding applications: \(self.selection.applicationTokens.count) apps selected")
+        let appCount = self.selection.applicationTokens.count
+        let categoryCount = self.selection.categoryTokens.count
+        
+        logger.debug("Shielding applications: \(appCount) apps, \(categoryCount) categories selected")
         
         // Block selected applications
-        store.shield.applications = selection.applicationTokens.isEmpty ?
-                                    nil :
-                                    selection.applicationTokens
+        store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
         
-        // Save the selection so it persists between app launches
+        // Block selected categories
+        if selection.categoryTokens.isEmpty {
+            store.shield.applicationCategories = nil
+        } else {
+            store.shield.applicationCategories = .specific(selection.categoryTokens)
+        }
+        
         saveSelection()
     }
     
@@ -97,7 +100,7 @@ class ShieldManager: ObservableObject {
     }
     
     // Load saved selection from UserDefaults
-    private func loadSavedSelection() {
+    func loadSavedSelectionIfNeeded() {
         guard let selectionData = Repository.suiteUserDefaults.data(forKey: "SavedAppSelection") else {
             logger.debug("No saved app selection found")
             return

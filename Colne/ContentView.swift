@@ -26,6 +26,9 @@ struct ContentView: View {
                     if !manager.selection.applicationTokens.isEmpty {
                         Text("\(manager.selection.applicationTokens.count) selected")
                             .foregroundColor(.secondary)
+                    } else if !manager.selection.categoryTokens.isEmpty {
+                        Text("\(manager.selection.categoryTokens.count) selected")
+                            .foregroundColor(.secondary)
                     }
                 }
                 .padding()
@@ -55,7 +58,8 @@ struct ContentView: View {
         }
         .familyActivityPicker(isPresented: $showActivityPicker, selection: $manager.selection)
         .onChange(of: manager.selection) { _ in
-            // When selection changes, update the shield if blocking is enabled
+            manager.selectionDidChange()
+            
             if isBlockingEnabled {
                 manager.shield()
             }

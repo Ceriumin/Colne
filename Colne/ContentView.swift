@@ -12,57 +12,66 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("App Blocking Status: \(isBlockingEnabled ? "Enabled" : "Disabled")")
-                .font(.headline)
-            
-            Button(action: {
-                showActivityPicker.toggle()
-            }) {
-                HStack {
-                    Image(systemName: "app.badge")
-                    Text("Select Apps to Block")
-                    Spacer()
-                    if !manager.selection.applicationTokens.isEmpty {
-                        Text("\(manager.selection.applicationTokens.count) selected")
-                            .foregroundColor(.secondary)
-                    } else if !manager.selection.categoryTokens.isEmpty {
-                        Text("\(manager.selection.categoryTokens.count) selected")
-                            .foregroundColor(.secondary)
-                    }
+        NavigationView {
+            Form {
+                Section(header: Text("BLOCKING")){
+                    ActionButton(icon: "app.badge", iconColor: .blue, label: "Block Apps", action: {showActivityPicker = true})
                 }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(10)
             }
-            
-            Text("When blocking is enabled, selected apps will be blocked.")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            .navigationTitle("\(isBlockingEnabled ? "Enabled" : "Disabled")")
         }
-        .padding()
         .onAppear {
             updateFromAppData()
         }
-        .onChange(of: appData) { newValue in
+        .onChange(of: appData) { oldValue, newValue in
             updateFromAppData()
         }
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { oldPhase, newPhase in
             if newPhase == .active {
-                // Update when app becomes active again
                 updateFromAppData()
             } else if newPhase == .background {
-                // Make sure state is correct before going to background
                 updateFromAppData()
             }
         }
         .familyActivityPicker(isPresented: $showActivityPicker, selection: $manager.selection)
-        .onChange(of: manager.selection) { _ in
+        .onChange(of: manager.selection) { oldSelection, newSelection in
             manager.selectionDidChange()
             
             if isBlockingEnabled {
                 manager.shield()
             }
+        }
+    }
+    
+    struct ActionButton: View {
+        let icon: String
+        let iconColor: Color
+        let label: String
+        let action: () -> Void
+        
+        var body: some View{
+            Button(action: action){
+                HStack {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(iconColor)
+                            .frame(width: 28, height: 28)
+                        Image(systemName: icon)
+                            .foregroundColor(.white)
+                            .font(.system(size: 18, weight: .semibold))
+                    }
+                    .padding(.vertical, -2)
+                    .padding(.leading, -6)
+                    
+                    Text(label)
+                        .font(.system(size: 17))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
+                }
+                .padding(.vertical, 6)
+            }
+            .buttonStyle(PlainButtonStyle())
         }
     }
     

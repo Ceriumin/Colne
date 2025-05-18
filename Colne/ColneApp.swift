@@ -28,7 +28,7 @@ struct ColneApp: App {
                     // Make sure shield state is correct on app launch
                     ShieldManager.shared.updateShieldState()
                 }
-                .onChange(of: ScenePhase.active) { _ in
+                .onChange(of: ScenePhase.active) { oldPhase, newPhase in
                     // Update shield state when app becomes active
                     ShieldManager.shared.updateShieldState()
                 }

@@ -1,7 +1,6 @@
 import OSLog
 import AppIntents
 
-/// - Tag: Repository
 final class Repository: Sendable {
     enum RepositoryError: Error, CustomLocalizedStringResourceConvertible {
         case notFound

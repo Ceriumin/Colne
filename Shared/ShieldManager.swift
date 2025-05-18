@@ -10,14 +10,11 @@ class ShieldManager: ObservableObject {
     private let center = AuthorizationCenter.shared
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.app.Colne", category: "ShieldManager")
     
-    // Create a shared instance for access across the app
     static let shared = ShieldManager()
     
     init() {
-        // Load any previously saved selection
         loadSavedSelectionIfNeeded()
         
-        // Request authorization when initialized
         Task {
             do {
                 try await center.requestAuthorization(for: .individual)
@@ -26,7 +23,6 @@ class ShieldManager: ObservableObject {
             }
         }
         
-        // Set up notification observers for app data changes
         NotificationCenter.default.addObserver(
             forName: Repository.appDataUpdatedNotification,
             object: nil,
@@ -37,9 +33,7 @@ class ShieldManager: ObservableObject {
     }
     
     func selectionDidChange() {
-        // Save the selection
         saveSelection()
-        
     }
     
     func shield() {
@@ -48,10 +42,8 @@ class ShieldManager: ObservableObject {
         
         logger.debug("Shielding applications: \(appCount) apps, \(categoryCount) categories selected")
         
-        // Block selected applications
         store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
         
-        // Block selected categories
         if selection.categoryTokens.isEmpty {
             store.shield.applicationCategories = nil
         } else {
@@ -69,7 +61,6 @@ class ShieldManager: ObservableObject {
         store.shield.applicationCategories = nil
     }
     
-    // Update shield based on current app data
     func updateShieldState() {
         let decoder = JSONDecoder()
         guard let appData = Repository.suiteUserDefaults.data(forKey: "AppData"),
@@ -87,7 +78,6 @@ class ShieldManager: ObservableObject {
         }
     }
     
-    // Save selection to UserDefaults
     private func saveSelection() {
         do {
             let encoder = JSONEncoder()
@@ -99,7 +89,6 @@ class ShieldManager: ObservableObject {
         }
     }
     
-    // Load saved selection from UserDefaults
     func loadSavedSelectionIfNeeded() {
         guard let selectionData = Repository.suiteUserDefaults.data(forKey: "SavedAppSelection") else {
             logger.debug("No saved app selection found")
